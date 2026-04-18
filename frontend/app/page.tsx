@@ -13,8 +13,6 @@ export default function Home() {
   const [preview, setPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
-  
-  // State to hold the history of categorized images
   const [history, setHistory] = useState<any[]>([]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -34,18 +32,22 @@ export default function Home() {
     formData.append("file", file);
 
     try {
-      // Use the live Render URL if it exists, otherwise use your local Python server
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      // THE CONNECTION BRIDGE
+      const rawUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const apiUrl = rawUrl.replace(/\/$/, ""); 
       
+      console.log("🚀 Connecting to AI Brain at:", apiUrl);
+
       const response = await fetch(`${apiUrl}/api/v1/analyze`, {
         method: "POST",
         body: formData,
       });
-      const data = await response.json();
+
+      if (!response.ok) throw new Error(`Server Error: ${response.status}`);
       
+      const data = await response.json();
       setResult(data);
       
-      // If successful, save it to the history gallery
       if (!data.error) {
         setHistory(prev => [{
           id: Date.now(),
@@ -57,20 +59,18 @@ export default function Home() {
 
     } catch (error) {
       console.error("Error:", error);
-      alert("Failed to connect to API. Is your Python backend running?");
+      alert("Failed to connect to API. Your AI Brain is likely waking up from its Free Tier sleep. Please wait 30 seconds and try again!");
     } finally {
       setLoading(false);
     }
   };
 
-  // Function to clear the main stage for a new upload
   const handleReset = () => {
     setFile(null);
     setPreview(null);
     setResult(null);
   };
 
-  // Helper to match the extracted entity key to a cool Apple-style icon & color
   const getEntityStyling = (key: string) => {
     switch(key.toLowerCase()) {
       case 'amount': return { icon: <Coins className="w-4 h-4 text-amber-500" />, label: 'Amount' };
@@ -86,12 +86,9 @@ export default function Home() {
     }
   };
 
-  // NEW: Group the history array into smart folders based on category!
   const groupedHistory: Record<string, any[]> = history.reduce((folders, item) => {
     const category = item.category || "Uncategorized";
-    if (!folders[category]) {
-      folders[category] = [];
-    }
+    if (!folders[category]) folders[category] = [];
     folders[category].push(item);
     return folders;
   }, {} as Record<string, any[]>);
@@ -99,14 +96,14 @@ export default function Home() {
   return (
     <main className="min-h-screen relative overflow-x-hidden bg-[#f6f8fb] text-slate-800 font-sans selection:bg-blue-200 pb-24">
       
-      {/* Abstract Background Blobs for Glassmorphism contrast */}
+      {/* Abstract Background Blobs - Restored */}
       <div className="fixed top-[-10%] left-[-10%] w-[500px] h-[500px] bg-purple-300 rounded-full mix-blend-multiply filter blur-[120px] opacity-50 pointer-events-none"></div>
       <div className="fixed top-[20%] right-[-10%] w-[400px] h-[400px] bg-cyan-300 rounded-full mix-blend-multiply filter blur-[120px] opacity-50 pointer-events-none"></div>
       <div className="fixed bottom-[-10%] left-[20%] w-[600px] h-[600px] bg-pink-300 rounded-full mix-blend-multiply filter blur-[120px] opacity-50 pointer-events-none"></div>
 
       <div className="relative z-10 max-w-5xl mx-auto p-6 md:p-12 space-y-12">
         
-        {/* Header */}
+        {/* Header - Restored */}
         <motion.div 
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -127,7 +124,6 @@ export default function Home() {
         {/* Main Analyzer Area */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
           
-          {/* LEFT: Upload Section */}
           <motion.div 
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
@@ -140,13 +136,7 @@ export default function Home() {
             </h2>
             
             <label className="relative flex flex-col items-center justify-center w-full h-72 border-2 border-dashed border-blue-200/80 bg-blue-50/30 rounded-[1.5rem] cursor-pointer hover:bg-blue-50/50 hover:border-blue-400 transition-all duration-300 group overflow-hidden shadow-inner">
-              <input 
-                type="file" 
-                accept="image/*" 
-                onChange={handleFileChange}
-                className="hidden" 
-              />
-              
+              <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
               <AnimatePresence mode="wait">
                 {preview ? (
                   <motion.img 
@@ -201,7 +191,6 @@ export default function Home() {
             </motion.button>
           </motion.div>
 
-          {/* RIGHT: Results Section */}
           <motion.div 
             initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
@@ -233,7 +222,6 @@ export default function Home() {
                 animate={{ opacity: 1, y: 0 }}
                 className="space-y-6 pb-16"
               >
-                {/* Category Pill */}
                 <div className="bg-white/50 rounded-2xl p-4 border border-white/80 shadow-sm flex items-center justify-between">
                   <span className="text-slate-500 font-semibold text-sm uppercase tracking-wider">Category</span>
                   <div className="flex items-center gap-2 bg-indigo-100 text-indigo-700 px-4 py-1.5 rounded-full font-bold shadow-sm">
@@ -242,7 +230,6 @@ export default function Home() {
                   </div>
                 </div>
                 
-                {/* Extracted Entities List */}
                 <div>
                   <span className="text-slate-500 font-semibold text-sm uppercase tracking-wider ml-1">Extracted Data</span>
                   <div className="bg-white/50 rounded-2xl p-2 mt-2 border border-white/80 shadow-sm divide-y divide-slate-100/50">
@@ -267,7 +254,6 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Raw Text Window */}
                 <div>
                   <span className="text-slate-500 font-semibold text-sm uppercase tracking-wider ml-1">Raw OCR</span>
                   <div className="bg-[#1e293b]/90 backdrop-blur-md text-emerald-400 p-4 rounded-2xl mt-2 font-mono text-xs shadow-inner h-36 overflow-y-auto whitespace-pre-wrap border border-slate-700">
@@ -275,7 +261,6 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Process Another Button */}
                 <div className="absolute bottom-8 left-8 right-8">
                   <motion.button
                     whileHover={{ scale: 1.02 }}
@@ -288,44 +273,27 @@ export default function Home() {
                 </div>
               </motion.div>
             )}
-
-            {result?.error && (
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="text-red-600 p-5 bg-red-100/80 backdrop-blur-md rounded-2xl border border-red-200 shadow-sm font-semibold text-center"
-              >
-                ⚠️ {result.error}
-              </motion.div>
-            )}
           </motion.div>
         </div>
 
-        {/* Smart Folders Gallery */}
+        {/* History Gallery - Restored */}
         {history.length > 0 && (
-          <motion.div 
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="pt-12"
-          >
+          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="pt-12">
             <div className="flex items-center gap-3 mb-8">
               <div className="p-2 bg-white/50 backdrop-blur-md rounded-xl shadow-sm border border-white/60">
                 <FolderOpen className="w-6 h-6 text-indigo-500" />
               </div>
               <h2 className="text-2xl font-extrabold text-slate-800">Smart Folders</h2>
               <span className="ml-2 bg-indigo-100 text-indigo-700 py-1 px-3 rounded-full text-sm font-bold shadow-sm">
-                {history.length} Total Uploads
+                {history.length} Total
               </span>
             </div>
 
-            {/* Render a glass "Folder" for each category */}
             <div className="space-y-8">
               {Object.keys(groupedHistory).map((categoryName) => {
                 const items = groupedHistory[categoryName];
-                
                 return (
                   <div key={categoryName} className="bg-white/30 backdrop-blur-md border border-white/50 rounded-[2rem] p-6 shadow-sm">
-                    {/* Folder Header */}
                     <div className="flex items-center gap-2 mb-6 ml-2">
                       <CheckCircle2 className="w-6 h-6 text-indigo-600" />
                       <h3 className="text-xl font-extrabold text-slate-800 uppercase tracking-widest">{categoryName}</h3>
@@ -334,7 +302,6 @@ export default function Home() {
                       </span>
                     </div>
                     
-                    {/* Grid of images inside that folder */}
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                       <AnimatePresence>
                         {items.map((item: any) => (
@@ -349,9 +316,7 @@ export default function Home() {
                             </div>
                             <div className="p-4 flex flex-col gap-2">
                               <div className="text-sm font-semibold text-slate-600 truncate mt-1">
-                                {item.entities?.amount ? `Amount: ${item.entities.amount[0]}` : 
-                                 item.entities?.document_no ? `Doc: ${item.entities.document_no[0]}` : 
-                                 "Data Extracted"}
+                                {item.entities?.amount ? `Amount: ${item.entities.amount[0]}` : "Data Extracted"}
                               </div>
                             </div>
                           </motion.div>
@@ -364,7 +329,6 @@ export default function Home() {
             </div>
           </motion.div>
         )}
-
       </div>
     </main>
   );
