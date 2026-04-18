@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react"; // Added useEffect
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   UploadCloud, FileText, Tag, Cpu, Image as ImageIcon, Sparkles, CheckCircle2,
@@ -12,8 +12,27 @@ export default function Home() {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0); // Added Progress state
   const [result, setResult] = useState<any>(null);
   const [history, setHistory] = useState<any[]>([]);
+
+  // Simulation logic for the progress bar
+  useEffect(() => {
+    let interval: any;
+    if (loading) {
+      setProgress(0);
+      interval = setInterval(() => {
+        setProgress((prev) => {
+          if (prev >= 95) return prev; // Stay at 95 until finished
+          const increment = prev < 40 ? 5 : prev < 70 ? 2 : 0.5; // Slow down as it goes
+          return prev + increment;
+        });
+      }, 400);
+    } else {
+      setProgress(0);
+    }
+    return () => clearInterval(interval);
+  }, [loading]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -32,7 +51,6 @@ export default function Home() {
     formData.append("file", file);
 
     try {
-      // THE CONNECTION BRIDGE
       const rawUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
       const apiUrl = rawUrl.replace(/\/$/, ""); 
       
@@ -62,6 +80,7 @@ export default function Home() {
       alert("Failed to connect to API. Your AI Brain is likely waking up from its Free Tier sleep. Please wait 30 seconds and try again!");
     } finally {
       setLoading(false);
+      setProgress(100); // Set to full when done
     }
   };
 
@@ -96,14 +115,14 @@ export default function Home() {
   return (
     <main className="min-h-screen relative overflow-x-hidden bg-[#f6f8fb] text-slate-800 font-sans selection:bg-blue-200 pb-24">
       
-      {/* Abstract Background Blobs - Restored */}
+      {/* Abstract Background Blobs */}
       <div className="fixed top-[-10%] left-[-10%] w-[500px] h-[500px] bg-purple-300 rounded-full mix-blend-multiply filter blur-[120px] opacity-50 pointer-events-none"></div>
       <div className="fixed top-[20%] right-[-10%] w-[400px] h-[400px] bg-cyan-300 rounded-full mix-blend-multiply filter blur-[120px] opacity-50 pointer-events-none"></div>
       <div className="fixed bottom-[-10%] left-[20%] w-[600px] h-[600px] bg-pink-300 rounded-full mix-blend-multiply filter blur-[120px] opacity-50 pointer-events-none"></div>
 
       <div className="relative z-10 max-w-5xl mx-auto p-6 md:p-12 space-y-12">
         
-        {/* Header - Restored */}
+        {/* Header */}
         <motion.div 
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -124,6 +143,7 @@ export default function Home() {
         {/* Main Analyzer Area */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
           
+          {/* LEFT: Upload Section */}
           <motion.div 
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
@@ -191,6 +211,7 @@ export default function Home() {
             </motion.button>
           </motion.div>
 
+          {/* RIGHT: Results Section */}
           <motion.div 
             initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
@@ -209,10 +230,26 @@ export default function Home() {
               </div>
             )}
 
+            {/* PROGRESS BAR UI - Added */}
             {loading && (
-              <div className="flex-1 flex flex-col items-center justify-center text-indigo-500">
-                <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-500 rounded-full animate-spin mb-4"></div>
-                <p className="font-semibold animate-pulse">Extracting Thai text...</p>
+              <div className="flex-1 flex flex-col items-center justify-center text-indigo-500 w-full px-4">
+                <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-500 rounded-full animate-spin mb-6"></div>
+                <p className="font-bold text-lg mb-2 animate-pulse text-indigo-600">Extracting Thai Details...</p>
+                
+                {/* Visual Progress Bar */}
+                <div className="w-full h-3 bg-slate-200/50 rounded-full overflow-hidden border border-white/50 shadow-inner">
+                  <motion.div 
+                    initial={{ width: "0%" }}
+                    animate={{ width: `${progress}%` }}
+                    className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+                  />
+                </div>
+                <p className="mt-2 text-xs font-mono font-bold text-slate-500 uppercase tracking-tighter">
+                  System Load: {Math.round(progress)}%
+                </p>
+                <p className="mt-8 text-center text-xs text-slate-400 max-w-[200px]">
+                  Wait for {Math.round(progress)}%... The AI Brain is processing your image.
+                </p>
               </div>
             )}
 
@@ -276,7 +313,7 @@ export default function Home() {
           </motion.div>
         </div>
 
-        {/* History Gallery - Restored */}
+        {/* History Gallery */}
         {history.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="pt-12">
             <div className="flex items-center gap-3 mb-8">
