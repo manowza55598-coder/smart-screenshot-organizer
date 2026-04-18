@@ -26,5 +26,5 @@ COPY . .
 # Expose the port Render uses
 EXPOSE 10000
 
-# Command to run the FastAPI server
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "10000"]git add .
+# Start the server (Fixed syntax)
+CMD uvicorn main:app --host 0.0.0.0 --port 10000
